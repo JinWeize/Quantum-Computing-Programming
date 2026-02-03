@@ -128,8 +128,8 @@ is the number of parametrized gates and :math:`N` is the number of training samp
 # We want to build something similar for a quantum circuit. First, we import the necessary
 # libraries we will need in this demo and set a random seed for reproducibility:
 
-#import matplotlib as mpl
-#import matplotlib.pyplot as plt
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 import math
 import pandas as pd
@@ -890,35 +890,35 @@ def run_iterations(n_train):
 
 
 colors = sns.color_palette()
-#results_df = run_iterations(n_train=train_sizes[0])
+results_df = run_iterations(n_train=train_sizes[0])
 SmaRes= run_iterations(n_train=train_sizes[0])
-# figmin, axsmin = plt.subplots(2, 3, figsize=(16.5, 10))
-# c1=int(0)
-# axsmin[0, 0].plot(SmaRes["step"], SmaRes["train_cost"], "o-", label=fr"$N={train_sizes[0]}$", markevery=10, color=colors[c1],
-#          alpha=0.8)
-# axsmin[0, 0].plot(SmaRes["step"], SmaRes["test_cost"], "x--", label=None, markevery=10, color=colors[c1], alpha=0.8)
-# axsmin[0, 1].plot(SmaRes["step"], SmaRes["train_acc"], "o-", label=fr"$N={train_sizes[0]}$", markevery=10,
-#                   color=colors[c1],
-#                   alpha=0.8)
-# axsmin[0, 1].plot(SmaRes["step"], SmaRes["test_acc"], "x--", label=None, markevery=10, color=colors[c1], alpha=0.8)
-# for n_train in train_sizes[1:]:
-#     SmaWe= run_iterations(n_train=n_train)
-#     c1+=1
-#     axsmin[0, 0].plot(SmaRes["step"], SmaRes["train_cost"], "o-", label=fr"$N={n_train}$", markevery=10, color=colors[c1], alpha=0.8)
-#     axsmin[0, 0].plot(SmaRes["step"], SmaRes["test_cost"], "x--", label=None, markevery=10, color=colors[c1], alpha=0.8)
-#     axsmin[0, 1].plot(SmaRes["step"], SmaRes["train_acc"], "o-", label=fr"$N={n_train}$", markevery=10, color=colors[c1],
-#             alpha=0.8)
-#     axsmin[0, 1].plot(SmaRes["step"], SmaRes["test_acc"], "x--", label=None, markevery=10, color=colors[c1], alpha=0.8)
-#     #plt.savefig('name')
-#
-# legend_elements = [
-#     mpl.lines.Line2D([0], [0], label=f'N={n}', color=colors[i]) for i, n in enumerate(train_sizes)
-#     ] + [
-#     mpl.lines.Line2D([0], [0], marker='o', ls='-', label='Train', color='Black'),
-#     mpl.lines.Line2D([0], [0], marker='x', ls='--', label='Test', color='Black')
-#     ]
-#
-# axsmin[0, 0].legend(handles=legend_elements, ncol=3)
+figmin, axsmin = plt.subplots(2, 3, figsize=(16.5, 10))
+c1=int(0)
+axsmin[0, 0].plot(SmaRes["step"], SmaRes["train_cost"], "o-", label=fr"$N={train_sizes[0]}$", markevery=10, color=colors[c1],
+         alpha=0.8)
+axsmin[0, 0].plot(SmaRes["step"], SmaRes["test_cost"], "x--", label=None, markevery=10, color=colors[c1], alpha=0.8)
+axsmin[0, 1].plot(SmaRes["step"], SmaRes["train_acc"], "o-", label=fr"$N={train_sizes[0]}$", markevery=10,
+                  color=colors[c1],
+                  alpha=0.8)
+axsmin[0, 1].plot(SmaRes["step"], SmaRes["test_acc"], "x--", label=None, markevery=10, color=colors[c1], alpha=0.8)
+for n_train in train_sizes[1:]:
+    SmaWe= run_iterations(n_train=n_train)
+    c1+=1
+    axsmin[0, 0].plot(SmaRes["step"], SmaRes["train_cost"], "o-", label=fr"$N={n_train}$", markevery=10, color=colors[c1], alpha=0.8)
+    axsmin[0, 0].plot(SmaRes["step"], SmaRes["test_cost"], "x--", label=None, markevery=10, color=colors[c1], alpha=0.8)
+    axsmin[0, 1].plot(SmaRes["step"], SmaRes["train_acc"], "o-", label=fr"$N={n_train}$", markevery=10, color=colors[c1],
+            alpha=0.8)
+    axsmin[0, 1].plot(SmaRes["step"], SmaRes["test_acc"], "x--", label=None, markevery=10, color=colors[c1], alpha=0.8)
+    plt.savefig('name')
+
+legend_elements = [
+    mpl.lines.Line2D([0], [0], label=f'N={n}', color=colors[i]) for i, n in enumerate(train_sizes)
+    ] + [
+    mpl.lines.Line2D([0], [0], marker='o', ls='-', label='Train', color='Black'),
+    mpl.lines.Line2D([0], [0], marker='x', ls='--', label='Test', color='Black')
+    ]
+
+axsmin[0, 0].legend(handles=legend_elements, ncol=3)
 #Classify the eignstates=====================================================================================
 ScarMarker2=np.zeros(nbs,dtype=int)
 ScarMarker3=np.zeros(nbs,dtype=int)
@@ -933,16 +933,16 @@ for n in range(nbs):
 
     if Overlap[n] != 0:
         logq = np.log(Overlap[n])
-        #axsmin[1, 0].plot(Eall1[n], logq, linesScar)
+        axsmin[1, 0].plot(Eall1[n], logq, linesScar)
         if logq>-20 and ScarMarker2[n]==1:
             ScarMarker3[n] = 1
 
 
-#axsmin[1, 0].set_ylim(-20, 0)
+axsmin[1, 0].set_ylim(-20, 0)
 
-#np.savez('20231209',SmaWe=SmaWe,SmaWeL=SmaWeL,ns=ns,ScarMarker2=ScarMarker2,ScarMarker3=ScarMarker3,SmaRes=SmaRes,OverlapKxi=OverlapKxi, JLam = 1,JSig = 0.1,Jzz = 1)
-#data2=np.load('20241008GC2PXPOBC_12bit.npz')
-#if data2["train_cost"][-1]>SmaRes["train_cost"][-1]:
+# np.savez('20231209',SmaWe=SmaWe,SmaWeL=SmaWeL,ns=ns,ScarMarker2=ScarMarker2,ScarMarker3=ScarMarker3,SmaRes=SmaRes,OverlapKxi=OverlapKxi, JLam = 1,JSig = 0.1,Jzz = 1)
+# data2=np.load('20241008GC2PXPOBC_12bit.npz')
+# if data2["train_cost"][-1]>SmaRes["train_cost"][-1]:
 np.savez('20241008GC2PXPOBC_12bit',
          ns=ns,ScarMarker2=ScarMarker2,ScarMarker3=ScarMarker3,Overlap=Overlap,n_reps=n_reps,
         n_epochs=n_epochs,train_sizes = train_sizes,
@@ -988,8 +988,8 @@ for n in range(len(El)):
     for m in range(nS2):
         dEl2[n]+= math.exp(-(ES2[m]-El[n])**2/w2)/w1
 
-# axsmin[1, 1].plot(El,dEl1)
-# axsmin[1, 2].plot(El,dEl2)
-#
-# plt.show()
+axsmin[1, 1].plot(El,dEl1)
+axsmin[1, 2].plot(El,dEl2)
+
+plt.show()
 
