@@ -24,4 +24,3 @@ result = qvm.result().get_counts()
 
 # 打印量子程序和结果
 print(prog)
-print(result)
