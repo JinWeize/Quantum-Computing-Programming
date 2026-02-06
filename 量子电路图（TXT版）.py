@@ -1,19 +1,11 @@
 import numpy as np
 
-# --- 尽量兼容不同导出位置：draw_qprog / measure 在 pyqpanda3.core 里更常见 ---
-try:
-    from pyqpanda3.core import draw_qprog, measure
-except Exception:
-    from pyqpanda3.core.core import measure
-    # draw_qprog 如果这里也没有，就只能 print(prog) 看字符画
-    draw_qprog = None
-
+# 只保留本脚本实际需要的接口：measure / qif / 量子门 / QProg / QVM
 from pyqpanda3.core import (
-    QProg, CPUQVM, QCircuit,
+    QProg, CPUQVM,
     U3, RXX, RYY, RZZ, CNOT, BARRIER,
     measure, qif
 )
-
 
 # -----------------------------
 # 论文代码.py 对应的结构实现
@@ -42,7 +34,7 @@ def first_layer(weights, wires):
 
 
 def convolutional_layer(weights, wires):
-    """对应论文代码 convolutional_layer：两端U3 + RXX/RYY/RZZ（IsingXX/YY/ZZ 可用 RXX/RYY/RZZ 近似表示）"""
+    """对应论文代码 convolutional_layer：两端U3 + RXX/RYY/RZZ"""
     n = len(wires)
     assert n >= 3, "this circuit is too small!"
 
@@ -64,6 +56,7 @@ def pooling_layer(weights, wires, cbits):
     """
     对应论文代码 pooling_layer：
     测量 odd qubit -> cbit，然后若测量为1，对前一个 even qubit 施加条件U3
+    ⚠️ 这里包含动态控制流 qif，因此 draw_qprog 无法可视化，必须用 originir()
     """
     n = len(wires)
     assert n >= 2, "this circuit is too small!"
@@ -79,8 +72,7 @@ def pooling_layer(weights, wires, cbits):
             then_prog = QProg()
             then_prog << U3(target, w0, w1, w2)
 
-            # QIf 用法：QIf([cbit_idx]).then(then_prog).qendif()
-            # 表示 “如果这些cbits满足条件(通常为1)则执行 then_prog”
+            # ✅ pyqpanda3 动态电路：使用 qif 工厂函数（而不是 QIf 类）
             yield qif([c]).then(then_prog).qendif()
 
 
@@ -99,14 +91,14 @@ def conv_and_pooling(kernel_weights, wires, cbits, Cn=2):
         yield from convolutional_layer(kw[start:start+9], wires)
         start += 9
 
-    # 再做池化
+    # 再做池化（包含动态控制流）
     yield from pooling_layer(kw[:3], wires, cbits)
 
 
 def dense_layer_2q(weights15, wires2):
     """
     论文里用的是 qml.ArbitraryUnitary(15参数)。
-    pyqpanda3 没有直接等价的“15参任意两比特酉”API，这里用一个常见的“参数化两比特块”来画结构图：
+    这里用一个常见的“参数化两比特块”占位表示 dense 层结构：
     (U3,U3)-CNOT-(U3,U3)-CNOT-U3  共用15个参数。
     """
     assert len(wires2) == 2
@@ -124,22 +116,21 @@ def dense_layer_2q(weights15, wires2):
 
 
 # -----------------------------
-# 你报错的函数：build_qcnn_prog
+# build_qcnn_prog（方案A：用 originir 导出）
 # -----------------------------
 
-def build_qcnn_prog(weights_21xL, last_layer_weights, num_wires=13, Cn=2, save_pic=None):
+def build_qcnn_prog(weights_21xL, last_layer_weights, num_wires=13, Cn=2, save_ir="qcnn_originir.txt"):
     """
-    weights_21xL: shape=(21, layers)  其中 21=3+Cn*9 (Cn=2时=21)
+    weights_21xL: shape=(21, layers) 其中 21=3+Cn*9 (Cn=2时=21)
     last_layer_weights: 长度应为 15 + (num_wires*3 + (num_wires-1)*3) = 15 + (6*num_wires-3)
-                        num_wires=13 -> 15+75=90（与你的 last_layer_weights_90 对上）
+                        num_wires=13 -> 90
+    save_ir: 输出 originir 的文本文件路径（推荐 .txt）
     """
+    qvm = CPUQVM()
 
-    # ✅ pyqpanda3：CPUQVM 没有 init_qvm()，直接构造即可
-    qvm = CPUQVM()  # <-- 这里就是你原来报错的位置要改掉的点 :contentReference[oaicite:2]{index=2}
-
-    # ✅ pyqpanda3：用整数编号表示 qubit/cbit
+    # 用整数编号表示 qubit/cbit
     wires = list(range(num_wires))
-    cbits = list(range(num_wires))  # 这里用与qubit同编号的cbit
+    cbits = list(range(num_wires))
 
     weights_21xL = np.array(weights_21xL, dtype=float)
     layers = weights_21xL.shape[1]
@@ -150,19 +141,19 @@ def build_qcnn_prog(weights_21xL, last_layer_weights, num_wires=13, Cn=2, save_p
 
     prog = QProg()
 
-    # （可选）用一个Barrier占位表示“AmplitudeEmbedding/数据编码”，避免生成巨大的state-prep电路
-    prog << BARRIER(wires)  # BARRIER 输入是 list[int] :contentReference[oaicite:3]{index=3}
+    # （可选）用一个Barrier占位表示“数据编码”
+    prog << BARRIER(wires)
 
-    # first_layer 用 last_layer_weights[15:]（与论文代码一致）
+    # first_layer：用 last_layer_weights[15:]
     for op in first_layer(last_layer_weights[15:], wires):
         prog << op
 
-    # conv + pooling 多层
+    # conv + pooling 多层（含动态 qif）
     active_wires = wires[:]
     for j in range(layers):
         for op in conv_and_pooling(weights_21xL[:, j], active_wires, cbits, Cn=Cn):
             prog << op
-        active_wires = active_wires[::2]  # 与论文代码一致：池化后保留偶数位
+        active_wires = active_wires[::2]
         prog << BARRIER(active_wires)
 
     # dense 层：最后应剩2个wire
@@ -170,19 +161,24 @@ def build_qcnn_prog(weights_21xL, last_layer_weights, num_wires=13, Cn=2, save_p
     for op in dense_layer_2q(last_layer_weights[:15], active_wires):
         prog << op
 
-    # 输出测量：测量 qubit0 -> cbit0（你也可以按需测量更多）
+    # 输出测量：测量 qubit0 -> cbit0
     prog << measure(0, 0)
 
-    # 画图/字符画
-    print(prog)
-    if draw_qprog is not None and save_pic:
-        draw_qprog(prog, "pic", filename=save_pic)
+    # ✅ 方案A：导出 IR（支持动态控制流）
+    ir_text = prog.originir(precision=8)
+    print("===== QProg ORIGINIR (preview) =====")
+    print(ir_text)
+
+    if save_ir:
+        with open(save_ir, "w", encoding="utf-8") as f:
+            f.write(ir_text)
+        print(f"[OK] originir 已保存到：{save_ir}")
 
     return qvm, prog
 
 
 if __name__ == "__main__":
-    # 你自己的 weights_21x3 / last_layer_weights_90 在这里替换进去即可
+    # 示例随机参数（你替换成自己的参数即可）
     weights_21x3 = np.random.rand(21, 3)
     last_layer_weights_90 = np.random.rand(90)
 
@@ -191,10 +187,9 @@ if __name__ == "__main__":
         last_layer_weights_90,
         num_wires=13,
         Cn=2,
-        save_pic="qcnn_pyqpanda3.png"
+        save_ir="qcnn_originir.txt"   # ✅ 输出 IR 到这个文件
     )
 
-    # 跑一下（shots 随便给个数）
+    # 如果你只是要“电路结构文本”，下面 run 不跑也可以
     qvm.run(prog, 1000)
     print(qvm.result().get_counts())
-
