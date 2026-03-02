@@ -1,0 +1,13 @@
+CNOT(0, 1)表示受控非门
+CNOT(控制量子位, 目标量子位)
+
+测量概率用QProg + measure
+获得振幅相位，不要在电路中加入测量操作，直接对Prog做qvm的get_states方法，即可得到矢量
+
+Pyqpanda3中包含的量子电路门：
+X, Y, Z, ISWAP, SWAP
+CNOT, CZ, U1, U2, U3, U4, X1, X2, X3
+RX, RXX, RY, RYY, RZ, RXZ, RZZ
+TOFFOLI
+
+QGate中的contorl方法，例Y(1).control(0)，以0号量子比特为控制比特，对1号量子比特施加Y变换
