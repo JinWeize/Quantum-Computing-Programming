@@ -12,6 +12,7 @@ qvm = CPUQVM()
 qvm.run(prog, 1)
 state = qvm.result().get_state_vector()
 
+# 小端序索引|q_1 q_0>，标准书写方式：|q_0 q_1>
 n = 3
 eps = 1e-12
 for i, amp in enumerate(state):
