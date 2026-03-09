@@ -118,7 +118,6 @@ def Shor(phase_qubits, acc_qubits, tmp_qubits, work_msb, aux, a, N):
 def CFD(meas_result, a, N, t=None, bit_order="msb", top_k=8):
     """
     根据 Shor 第一寄存器的测量结果，使用连分数法恢复周期 r。
-
     参数
     ----
     meas_result : dict / str / int
