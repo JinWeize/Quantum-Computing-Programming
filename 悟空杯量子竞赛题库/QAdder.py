@@ -4,18 +4,8 @@
 from pyqpanda3.core import CPUQVM, QProg, QCircuit, X, CNOT, measure, TOFFOLI
 from pyqpanda3.core.core import draw_qprog, PIC_TYPE
 
-
-# Toffoli 在多数版本里叫 Toffoli；如果你环境里名字不同，可把下面 try/except 换成你实际的门名
-# try:
-#     from pyqpanda3.core import Toffoli
-# except Exception:
-#     # 兜底：用“给 X 加两个控制”构造 Toffoli（若你的版本支持 .control）
-#     from pyqpanda3.core import X as _X
-#     def Toffoli(c1, c2, t):
-#         return _X(t).control([c1, c2])
-
 def MAJ(c, b, a):
-    """MAJ(c,b,a): 2*CNOT + 1*Toffoli"""
+    """MAJ(c,b,a): 2*CNOT + 1*TOFFOLI"""
     cir = QCircuit()
     cir << CNOT(a, b)          # b ^= a
     cir << CNOT(a, c)          # c ^= a
@@ -60,13 +50,13 @@ def cdkm_adder(A, B, cin, cout=None):
 
     return cir
 
+# 可以用encode类？
 def load_int_into_reg(prog_or_cir, reg, value):
     """把整数 value 写进寄存器 reg（小端序），通过对为 1 的位加 X。"""
     for i, q in enumerate(reg):
         if (value >> i) & 1:
             prog_or_cir << X(q)
 
-# 使用案例：
 n = 4
 A = list(range(0, n))        # 0,1,2,3
 B = list(range(n, 2*n))      # 4,5,6,7
@@ -94,7 +84,9 @@ qvm = CPUQVM()
 qvm.run(prog, 1000)
 result = qvm.result().get_counts()
 
-# print(PIC_TYPE.__members__)
-draw_qprog(prog, p = PIC_TYPE.LATEX, output_file="adder.tex")
+print(PIC_TYPE.__members__)
+draw_qprog(prog, p = PIC_TYPE.LATEX)
+# draw_qprog(prog, p = PIC_TYPE.TEXT, output_file="adder.tex")
+draw_qprog(prog, p = PIC_TYPE.TEXT, output_file="adder.txt")
 print(prog)
 print(result)

@@ -74,6 +74,7 @@ def dense_angle_encode_demo():
 
 
 # TOP-DOWN编码amplitude_encode
+# 两量子比特，编码默认排序为：a0|00> + a1|10> + a2|01> + a3|11>
 def amplitude_encode_demo():
     qvm = CPUQVM()
     prog = QProg()
